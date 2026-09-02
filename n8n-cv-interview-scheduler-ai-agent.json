@@ -1,0 +1,425 @@
+{
+  "name": "n8n-cv-interview-scheduler-ai-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e9f31cb8-f8f8-42a0-b322-08a957834965",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        624,
+        96
+      ],
+      "id": "9b077ca4-e767-4dc8-86f5-15a74e949baf",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2In7OTcVzKHrxgFf",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        96
+      ],
+      "id": "0e124b25-4fd8-4cac-88f4-271f87f047c1",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Please analyze the following CV text and provide the structured summary: You are an expert technical recruiter analyzing CVs for a React Developer role.\n\n{{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert technical recruiter analyzing CVs for a React Developer role. Your job is to extract the candidate's core details and evaluate if they are a strong fit.\n\nAnalyze the provided CV text and generate a structured JSON output based on these exact guidelines:\n\nEvaluation Criteria:\n\nCore Tech Stack: Look for modern React/JavaScript ecosystem experience.\n\nPractical Experience: Identify years of experience and relevant engineering work.\n\nProblem-Solving Focus: Check for ability to build functional applications or manage complex logic.\n\nYour Output Format (ONLY valid JSON, no markdown):\n{\n\"candidateName\": \"\",\n\"contactInfo\": \"\",\n\"assessment\": \"Highly Recommended\" or \"Consider\" or \"Not a Fit\",\n\"keyStrengths\": \"\",\n\"recruiterNotes\": \"\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1040,
+        96
+      ],
+      "id": "e612f98a-457e-44df-bc96-ffbe43c6582d",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        960,
+        304
+      ],
+      "id": "e8ffae63-e859-4c9e-a2f8-a3742e384730",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dEA2XqXAqaIcT3cm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"candidateName\": { \"type\": \"string\" },\n    \"contactInfo\": { \"type\": \"string\" },\n    \"assessment\": { \n      \"type\": \"string\", \n      \"enum\": [\"Highly Recommended\", \"Consider\", \"Not a Fit\"] \n    },\n    \"keyStrengths\": { \"type\": \"string\" },\n    \"recruiterNotes\": { \"type\": \"string\" }\n  },\n  \"required\": [\"candidateName\", \"contactInfo\", \"assessment\", \"keyStrengths\", \"recruiterNotes\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        336
+      ],
+      "id": "4c46960b-0e56-4595-9924-823c4d134c2f",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "90ded44e-51d9-4796-bc11-89dbdb87b3f5",
+              "leftValue": "={{ $json.output.assessment }}",
+              "rightValue": "=Highly Recommended",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "ab75ef94-c6cb-4a15-bba3-f9700eaf1018",
+              "leftValue": "={{ $json.output.assessment }}",
+              "rightValue": "Consider",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        96
+      ],
+      "id": "8643628d-d266-420e-8e99-c64b7d3750d1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'1nfoIINRfhh-uVhBQcMCbi_ZIsBAiyVe_' in parents and mimeType = 'application/pdf' and trashed = false",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "897dae49-4c18-4bdb-91a0-a22126214fc9",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2In7OTcVzKHrxgFf",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "67867b9a3dac0b7cbbe0e0db9dcf7e78ed9a055b9d81b4d455dfabd035dd3b8d@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "n8n-pratice"
+        },
+        "start": "={{ $now.plus(1, 'day').set({ hour: 9, minute: 0, second: 0 }) }}",
+        "end": "={{ $now.plus(1, 'day').set({ hour: 13, minute: 0, second: 0 }) }}",
+        "additionalFields": {
+          "summary": "={{ $('Edit Fields').item.json.candidateName }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2048,
+        96
+      ],
+      "id": "0f643b4e-7efa-451b-9437-ff28d559438b",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "7nRzN76NCAVM0xXs",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "314fae67-2712-4268-9bc8-b88622c001d8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "zharkojaneski14@gmail.com",
+        "subject": "Approval  required",
+        "message": "=Subject: Interview Evaluation: {{ $json.output.candidateName }}\n\nPlease approve or disapprove this applicant.\n\nName: {{ $json.output.candidateName }}\n\nEmail: {{ $json.output.contactInfo }}\n\nKey Strengths:\n{{ $json.output.keyStrengths }}\n\nRecruiter Notes:\n{{ $json.output.recruiterNotes }}\n\nRecommendation: {{ $json.output.assessment }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        96
+      ],
+      "id": "6ca8c516-d1a7-4eb3-97d6-5cd0018c03e1",
+      "name": "Send message and wait for response",
+      "webhookId": "d102fe15-8fd1-4558-bd5a-e8f40db7d777",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PgXZtdaYZQMyYenb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e0ef5454-0ae6-4f3b-b5f3-420c7a086f0d",
+              "name": "candidateName",
+              "value": "={{ $json.output.candidateName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1616,
+        80
+      ],
+      "id": "6eea5297-9fc9-47d7-98ac-9dad2b68c0a6",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2025c4b1-e08a-4150-a5dc-967bd7c36ff2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d509a93c1d920dbbcecfc6a349d71a9da38a9b8d8cbe82c410d04fed44dfac26"
+  },
+  "id": "PXYbZYzv9ZSvgbDD",
+  "tags": []
+}
