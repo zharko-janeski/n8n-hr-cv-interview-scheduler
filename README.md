@@ -13,17 +13,19 @@
 
 ## ✨ What it does
 
-- 📂 **Scans a Google Drive folder** and processes every PDF CV, one candidate at a time
-- 🧠 **AI evaluation** — a self-hosted **Qwen** model (LM Studio) reads each CV like a technical recruiter and returns structured JSON: candidate name, email, key strengths, recruiter notes, and a verdict (*Highly Recommended / Consider / Not a Fit*) — with **Google Gemini as fallback** if the local model is unreachable
-- 🚫 **Auto-rejection** — candidates rated *Not a Fit* are skipped and the loop moves on to the next CV
-- 📅 **Smart scheduling** — checks Google Calendar for tomorrow's availability and books the **first free hour**, skipping slots that are already taken
-- ✅ **Human in the loop** — emails the full evaluation to HR and **pauses the workflow** until HR clicks *Approve* or *Reject* in Gmail
-- 📆 **Books the interview** — creates a 1-hour event in Google Calendar and sends the candidate a confirmation email with the exact date and time
-- 🔁 **Loops** back and repeats until every CV in the folder is processed — one click runs the whole pipeline
+-  **Scans a Google Drive folder** and processes every PDF CV, one candidate at a time
+-  **AI evaluation** — a self-hosted **Qwen** model (LM Studio) reads each CV like a technical recruiter and returns structured JSON: candidate name, email, key strengths, recruiter notes, and a verdict (*Highly Recommended / Consider / Not a Fit*) — with **Google Gemini as fallback** if the local model is unreachable
+-  **Auto-rejection** — candidates rated *Not a Fit* are skipped and the loop moves on to the next CV
+-  **Smart scheduling** — checks Google Calendar for tomorrow's availability and books the **first free hour**, skipping slots that are already taken
+-  **Human in the loop** — emails the full evaluation to HR and **pauses the workflow** until HR clicks *Approve* or *Reject* in Gmail
+-  **Books the interview** — creates a 1-hour event in Google Calendar and sends the candidate a confirmation email with the exact date and time
+-  **Loops** back and repeats until every CV in the folder is processed — one click runs the whole pipeline
 
 
 
 ## ⚙️ Workflow
+
+One n8n workflow loops through every CV: **scan Drive → AI evaluation → filter → HR approval → book interview → email candidate → next CV.**
 
 ![Full workflow canvas](canvas.png)
 
